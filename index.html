@@ -123,7 +123,20 @@
 </head>
 <body>
     <div class="mytitle">
-        <h1>D+300</h1>
+        <h1>
+             <style>
+                #dday {font-weight:bold; font-size:30px; color:#8a80a0; letter-spacing:0px; font-family:arial;}
+             </style>
+              
+             <script>
+                var now = new Date();
+                var then = new Date('decmber 3,2020');
+                var gap = now.getTime() - then.getTime();
+                gap = Math.floor(gap / (1000 * 60 * 60 * 24)) * -1;
+                document.write('<div id="dday">❤️<span style="font-size:33px;">' + gap + '</span></div>');
+             </script>  
+        
+        </h1>
         <a class="btn" href="https://www.icloud.com/sharedalbum/#B0o532ODWr4k02q" target="_blank">우리의 추억사진 보러가기></a>
     </div>
     <div class="box">
