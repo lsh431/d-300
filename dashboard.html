@@ -374,8 +374,8 @@
     <div class="task" id="task-1" onclick="toggleTask(1)">
       <div class="task-check" id="check-1"></div>
       <div class="task-content">
-        <div class="task-title">07:30 이전 기상 확인 버튼 누르기</div>
-        <div class="task-desc">위 ⏰ 카드를 눌러 기록. 이 시간 이후엔 자동 실패 처리.</div>
+        <div class="task-title">기상 직후 햇빛 10분 + ⏰ 기상 기록</div>
+        <div class="task-desc">일어나면 바로 커튼 열고 창가/밖에서 빛 쬐기. 우울·생체리듬 핵심. 시각은 무관, 기록만.</div>
       </div>
       <div class="task-badge badge-must">MUST</div>
     </div>
@@ -401,8 +401,8 @@
     <div class="task" id="task-4" onclick="toggleTask(4)">
       <div class="task-check" id="check-4"></div>
       <div class="task-content">
-        <div class="task-title">오전 SNS 피드 스크롤 금지</div>
-        <div class="task-desc">11시 이전 피드 안 봤으면 체크. 봤으면 체크 불가.</div>
+        <div class="task-title">어제와 비슷한 시각에 취침 (±1시간)</div>
+        <div class="task-desc">늦게 자도 된다. 매일 같은 시각이 진짜 레버. 지켰으면 체크.</div>
       </div>
       <div class="task-badge badge-must">MUST</div>
     </div>
@@ -451,9 +451,9 @@
   <!-- RULES -->
   <div class="section">
     <div class="section-title">나의 규율 — 헌법</div>
-    <div class="rule"><div class="rule-num">01</div><div class="rule-text">매일 <em>07:30 이전</em>에 이 페이지를 연다. 기상 확인을 누른다.</div></div>
+    <div class="rule"><div class="rule-num">01</div><div class="rule-text">일찍이 아니라 <em>일정하게</em> 잔다. 기상 시각이 아니라 규칙성이 핵심.</div></div>
     <div class="rule"><div class="rule-num">02</div><div class="rule-text"><em>Suno 1곡</em>은 협상 불가. 퀄리티는 나중에. 오늘 존재해야 한다.</div></div>
-    <div class="rule"><div class="rule-num">03</div><div class="rule-text">오전 11시 전 <em>SNS 피드 스크롤 금지.</em> 올리는 건 OK, 보는 건 NO.</div></div>
+    <div class="rule"><div class="rule-num">03</div><div class="rule-text">기상 후 <em>첫 30분 피드 스크롤 금지.</em> 올리는 건 OK, 보는 건 NO.</div></div>
     <div class="rule"><div class="rule-num">04</div><div class="rule-text">fiepesia 조회수는 <em>30일간 확인 금지.</em> 지금 그건 중요하지 않다.</div></div>
     <div class="rule"><div class="rule-num">05</div><div class="rule-text">sokuhyun 영상 배경음악은 <em>반드시 내가 만든 곡.</em> 항상.</div></div>
     <div class="rule"><div class="rule-num">06</div><div class="rule-text">슬플 때 Suno를 연다. <em>감정을 곡으로 바꾼다.</em> 슬픔이 재료다.</div></div>
@@ -576,16 +576,12 @@
   function calcScore(today) {
     let score = 0;
     const t = today.tasks || {};
-    // Wake before 7:30 = 25pts, before 9 = 10pts
-    if (today.wake) {
-      const wh = today.wakeHour || 24;
-      if (wh <= 7.5) score += 25;
-      else if (wh <= 9) score += 10;
-    }
+    if (today.wake) score += 10;        // got up + logged it — clock time doesn't matter
+    if (t[1]) score += 15;              // sunlight after waking
     if (today.sunoToday >= 1) score += 30;
     if (today.post) score += 20;
-    if (t[4]) score += 10; // no SNS
-    if (t[5]) score += 15; // log written
+    if (t[4]) score += 10;              // consistent bedtime
+    if (t[5]) score += 15;              // log written
     return Math.min(score, 100);
   }
 
@@ -659,8 +655,8 @@
 
     // Greeting
     const h = now.getHours();
-    const greetings = h < 8 ? '좋아, 일찍 일어났군' : h < 12 ? '오전이 핵심이다' : h < 18 ? '지금이라도 시작해' : '오늘 Suno 켰어?';
-    document.getElementById('greeting').textContent = greetings;
+    const didSuno = (today.sunoToday || 0) >= 1;
+    document.getElementById('greeting').textContent = didSuno ? '곡은 만들었다. 이제 세상에 내보내.' : '오늘, 한 곡부터.';
 
     // Streak
     const streak = calcStreak();
@@ -672,12 +668,11 @@
     const wakeCard = document.getElementById('card-wake');
     const wakeVal = document.getElementById('wake-val');
     if (today.wake) {
-      wakeCard.className = `status-card ${today.wakeHour <= 7.5 ? 'done' : 'failed'}`;
+      wakeCard.className = 'status-card done';
       wakeVal.textContent = today.wake;
     } else {
       wakeCard.className = 'status-card';
-      wakeVal.textContent = h >= 8 ? 'LATE' : '?';
-      if (h >= 8) wakeCard.className = 'status-card failed';
+      wakeVal.textContent = '?';
     }
 
     const sunoVal = document.getElementById('suno-val');
@@ -706,8 +701,7 @@
 
     // Tasks
     const t = today.tasks || {};
-    // Auto-set task 1 from wake
-    if (today.wake && today.wakeHour <= 7.5) t[1] = true;
+    // Auto-set Suno task from track count
     if (today.sunoToday >= 1) t[2] = true;
 
     for (let i = 1; i <= 5; i++) {
@@ -734,9 +728,9 @@
 
     // Alert
     const alertBox = document.getElementById('alertBox');
-    if (score === 0 && h >= 10) {
+    if ((today.sunoToday || 0) === 0 && score < 20) {
       alertBox.className = 'alert-box show fire';
-      alertBox.textContent = `지금 ${h}시야. 아무것도 안 했어. sokuhyun이 1000만을 찍은 건 오늘 같은 날 Suno를 켰기 때문이 아니야 — 하지만 그 미래의 너는 오늘의 너가 켰기 때문에 가능해.`;
+      alertBox.textContent = '아직 곡이 0개야. 완성하지 않아도 돼 — Suno 열고 한 줄만 써. 슬프면 그 슬픔을 가사로 넣어. 슬픔이 재료다.';
     } else if (score >= 100) {
       alertBox.className = 'alert-box show chill';
       alertBox.textContent = '오늘 완주. 스트릭 유지됐어. 내일 07:30 이전에 이 페이지를 다시 열어.';
