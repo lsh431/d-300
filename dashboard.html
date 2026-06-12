@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOKUHYUN × ARTIST — Daily Command</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --border: #1e1e2e;
+      --accent: #e040fb;
+      --accent2: #00e5ff;
+      --warn: #ff6b6b;
+      --ok: #69ff94;
+      --text: #e0e0f0;
+      --muted: #555570;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', 'Noto Sans KR', sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    .container { max-width: 680px; margin: 0 auto; }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header .artist-name {
+      font-size: 11px;
+      letter-spacing: 6px;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 4px;
+    }
+    .header .date-display {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .header .day-count {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+    .day-count.good { background: rgba(105,255,148,0.1); color: var(--ok); border: 1px solid rgba(105,255,148,0.3); }
+    .day-count.warn { background: rgba(255,107,107,0.1); color: var(--warn); border: 1px solid rgba(255,107,107,0.3); }
+
+    /* Status bar */
+    .status-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .status-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .status-card:hover { border-color: var(--accent); }
+    .status-card.done { border-color: var(--ok); background: rgba(105,255,148,0.05); }
+    .status-card.failed { border-color: var(--warn); background: rgba(255,107,107,0.05); }
+    .status-card .icon { font-size: 22px; margin-bottom: 4px; }
+    .status-card .label { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+    .status-card .value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+    .status-card.done .value { color: var(--ok); }
+    .status-card.failed .value { color: var(--warn); }
+
+    /* Section */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    /* Task items */
+    .task {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .task:last-child { border-bottom: none; padding-bottom: 0; }
+    .task:first-child { padding-top: 0; }
+    .task:hover { opacity: 0.8; }
+    .task-check {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+      transition: all 0.2s;
+      font-size: 12px;
+    }
+    .task.done .task-check {
+      background: var(--ok);
+      border-color: var(--ok);
+      color: #000;
+    }
+    .task.locked .task-check {
+      background: rgba(255,107,107,0.2);
+      border-color: var(--warn);
+    }
+    .task-content { flex: 1; }
+    .task-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+    .task.done .task-title { text-decoration: line-through; color: var(--muted); }
+    .task-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .task-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .badge-must { background: rgba(224,64,251,0.15); color: var(--accent); }
+    .badge-create { background: rgba(0,229,255,0.15); color: var(--accent2); }
+
+    /* Suno counter */
+    .suno-counter {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 0 0 0;
+    }
+    .counter-btn {
+      background: rgba(0,229,255,0.1);
+      border: 1px solid rgba(0,229,255,0.3);
+      color: var(--accent2);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .counter-btn:hover { background: rgba(0,229,255,0.2); }
+    .counter-display {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent2);
+    }
+    .counter-label { font-size: 12px; color: var(--muted); }
+
+    /* Weekly grid */
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    .week-day {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      border: 1px solid var(--border);
+    }
+    .week-day.done { background: rgba(105,255,148,0.15); border-color: rgba(105,255,148,0.4); color: var(--ok); }
+    .week-day.partial { background: rgba(224,64,251,0.1); border-color: rgba(224,64,251,0.3); color: var(--accent); }
+    .week-day.missed { background: rgba(255,107,107,0.08); border-color: rgba(255,107,107,0.2); color: var(--warn); }
+    .week-day.future { opacity: 0.3; }
+    .week-day.today { border-color: var(--accent) !important; }
+    .week-day .wday { font-size: 8px; color: var(--muted); margin-bottom: 2px; }
+
+    /* Constitution */
+    .rule {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .rule:last-child { border-bottom: none; }
+    .rule-num {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 11px;
+      min-width: 20px;
+      padding-top: 2px;
+    }
+    .rule-text { color: var(--text); }
+    .rule-text em { color: var(--warn); font-style: normal; font-weight: 700; }
+
+    /* Goals */
+    .goal-block {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .goal-block:last-child { border-bottom: none; }
+    .goal-label { font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+    .goal-text { font-size: 15px; font-weight: 500; }
+    .goal-why { font-size: 12px; color: var(--accent); margin-top: 4px; }
+
+    /* Note area */
+    .note-area {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px;
+      padding: 12px;
+      resize: vertical;
+      min-height: 80px;
+      margin-top: 8px;
+    }
+    .note-area:focus { outline: none; border-color: var(--accent); }
+
+    /* Save button */
+    .btn-save {
+      margin-top: 10px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+    .btn-save:hover { opacity: 0.85; }
+
+    /* Alarm / motivator */
+    .alert-box {
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      line-height: 1.7;
+      display: none;
+    }
+    .alert-box.show { display: block; }
+    .alert-box.fire { background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); color: #ffaaaa; }
+    .alert-box.chill { background: rgba(105,255,148,0.08); border: 1px solid rgba(105,255,148,0.2); color: #aaffcc; }
+
+    /* Score */
+    .score-wrap { text-align: center; padding: 12px 0; }
+    .score-big { font-size: 56px; font-weight: 700; }
+    .score-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    /* Blocked message */
+    .blocked {
+      background: rgba(255,107,107,0.08);
+      border: 1px solid rgba(255,107,107,0.25);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 13px;
+      color: #ff9999;
+      margin-top: 8px;
+      display: none;
+    }
+    .blocked.show { display: block; }
+
+    /* Bottom */
+    .footer {
+      text-align: center;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+    }
+
+    @media (max-width: 500px) {
+      .status-bar { grid-template-columns: repeat(3,1fr); gap: 8px; }
+      .status-card { padding: 12px 6px; }
+      .status-card .value { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="artist-name">SOKUHYUN × ARTIST COMMAND</div>
+    <h1 id="greeting">오늘도 만들어야 한다</h1>
+    <div class="date-display" id="dateDisplay"></div>
+    <div id="streakBadge" class="day-count good">STREAK: 0일</div>
+  </div>
+
+  <!-- ALERT -->
+  <div id="alertBox" class="alert-box"></div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="status-card" id="card-wake" onclick="checkIn('wake')">
+      <div class="icon">⏰</div>
+      <div class="label">기상</div>
+      <div class="value" id="wake-val">?</div>
+    </div>
+    <div class="status-card" id="card-suno" onclick="checkIn('suno')">
+      <div class="icon">🎵</div>
+      <div class="label">Suno</div>
+      <div class="value" id="suno-val">0</div>
+    </div>
+    <div class="status-card" id="card-post" onclick="checkIn('post')">
+      <div class="icon">📱</div>
+      <div class="label">콘텐츠</div>
+      <div class="value" id="post-val">—</div>
+    </div>
+  </div>
+
+  <!-- TODAY SCORE -->
+  <div class="section" style="margin-bottom:16px;">
+    <div class="section-title">오늘의 점수</div>
+    <div class="score-wrap">
+      <div class="score-big" id="todayScore">0<span style="font-size:24px;color:var(--muted)">/100</span></div>
+      <div class="score-label" id="scoreLabel">아직 아무것도 안 했어요</div>
+    </div>
+  </div>
+
+  <!-- DAILY TASKS -->
+  <div class="section">
+    <div class="section-title">오늘의 미션 — 타협 없음</div>
+
+    <div class="task" id="task-1" onclick="toggleTask(1)">
+      <div class="task-check" id="check-1"></div>
+      <div class="task-content">
+        <div class="task-title">기상 직후 햇빛 10분 + ⏰ 기상 기록</div>
+        <div class="task-desc">일어나면 바로 커튼 열고 창가/밖에서 빛 쬐기. 우울·생체리듬 핵심. 시각은 무관, 기록만.</div>
+      </div>
+      <div class="task-badge badge-must">MUST</div>
+    </div>
+
+    <div class="task" id="task-2" onclick="toggleTask(2)">
+      <div class="task-check" id="check-2"></div>
+      <div class="task-content">
+        <div class="task-title">Suno에서 곡 1개 이상 완성</div>
+        <div class="task-desc">완성도 무관. 만들고 위 🎵 카드에 기록.</div>
+      </div>
+      <div class="task-badge badge-create">CREATE</div>
+    </div>
+
+    <div class="task" id="task-3" onclick="toggleTask(3)">
+      <div class="task-check" id="check-3"></div>
+      <div class="task-content">
+        <div class="task-title">숏폼 or 릴스 1개 업로드 (주 3회)</div>
+        <div class="task-desc">오늘 올린 날: 📱 카드 클릭. sokuhyun 계정 우선.</div>
+      </div>
+      <div class="task-badge badge-create">CREATE</div>
+    </div>
+
+    <div class="task" id="task-4" onclick="toggleTask(4)">
+      <div class="task-check" id="check-4"></div>
+      <div class="task-content">
+        <div class="task-title">어제와 비슷한 시각에 취침 (±1시간)</div>
+        <div class="task-desc">늦게 자도 된다. 매일 같은 시각이 진짜 레버. 지켰으면 체크.</div>
+      </div>
+      <div class="task-badge badge-must">MUST</div>
+    </div>
+
+    <div class="task" id="task-5" onclick="toggleTask(5)">
+      <div class="task-check" id="check-5"></div>
+      <div class="task-content">
+        <div class="task-title">오늘 일지 작성 (아래 텍스트 입력)</div>
+        <div class="task-desc">무엇을 했고 무엇이 막혔는지 3줄. 저장 버튼 누르면 체크.</div>
+      </div>
+      <div class="task-badge badge-must">MUST</div>
+    </div>
+
+  </div>
+
+  <!-- SUNO TRACKER -->
+  <div class="section">
+    <div class="section-title">Suno 트랙 카운터</div>
+    <div class="suno-counter">
+      <button class="counter-btn" onclick="addSuno()">+ 트랙 추가</button>
+      <div>
+        <div class="counter-display" id="sunoCount">0</div>
+        <div class="counter-label">오늘 만든 트랙</div>
+      </div>
+      <div style="margin-left:auto;text-align:right;">
+        <div style="font-size:22px;font-weight:700;color:var(--accent)" id="totalSuno">0</div>
+        <div class="counter-label">누적 트랙</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEKLY GRID -->
+  <div class="section">
+    <div class="section-title">이번 주 실행 현황</div>
+    <div class="week-grid" id="weekGrid"></div>
+  </div>
+
+  <!-- DAILY LOG -->
+  <div class="section">
+    <div class="section-title">오늘의 일지 — 반드시 작성</div>
+    <textarea class="note-area" id="dailyNote" placeholder="오늘 한 것:&#10;막힌 것:&#10;내일 할 것:"></textarea>
+    <div class="blocked" id="saveBlocked">일지를 3줄 이상 작성해야 저장됩니다.</div>
+    <button class="btn-save" onclick="saveLog()">저장하고 Task 5 완료</button>
+  </div>
+
+  <!-- RULES -->
+  <div class="section">
+    <div class="section-title">나의 규율 — 헌법</div>
+    <div class="rule"><div class="rule-num">01</div><div class="rule-text">일찍이 아니라 <em>일정하게</em> 잔다. 기상 시각이 아니라 규칙성이 핵심.</div></div>
+    <div class="rule"><div class="rule-num">02</div><div class="rule-text"><em>Suno 1곡</em>은 협상 불가. 퀄리티는 나중에. 오늘 존재해야 한다.</div></div>
+    <div class="rule"><div class="rule-num">03</div><div class="rule-text">기상 후 <em>첫 30분 피드 스크롤 금지.</em> 올리는 건 OK, 보는 건 NO.</div></div>
+    <div class="rule"><div class="rule-num">04</div><div class="rule-text">fiepesia 조회수는 <em>30일간 확인 금지.</em> 지금 그건 중요하지 않다.</div></div>
+    <div class="rule"><div class="rule-num">05</div><div class="rule-text">sokuhyun 영상 배경음악은 <em>반드시 내가 만든 곡.</em> 항상.</div></div>
+    <div class="rule"><div class="rule-num">06</div><div class="rule-text">슬플 때 Suno를 연다. <em>감정을 곡으로 바꾼다.</em> 슬픔이 재료다.</div></div>
+    <div class="rule"><div class="rule-num">07</div><div class="rule-text">이 페이지에 <em>일지를 안 쓰면</em> 하루가 완료되지 않는다.</div></div>
+  </div>
+
+  <!-- GOALS -->
+  <div class="section">
+    <div class="section-title">왜 이걸 하는가</div>
+    <div class="goal-block">
+      <div class="goal-label">최종 목표</div>
+      <div class="goal-text">일본에서 이름이 알려진 J-pop 아티스트가 된다</div>
+    </div>
+    <div class="goal-block">
+      <div class="goal-label">증명된 사실</div>
+      <div class="goal-text">sokuhyun으로 1000만뷰 × 2개를 만든 사람</div>
+      <div class="goal-why">→ 바이럴 감각은 이미 있다. 캐릭터만 음악에 붙이면 된다.</div>
+    </div>
+    <div class="goal-block">
+      <div class="goal-label">지금 하는 것</div>
+      <div class="goal-text">Suno 트랙 누적 + sokuhyun × 음악 정체성 통합</div>
+      <div class="goal-why">→ 운동 + J-pop 미학 = 아무도 없는 포지션</div>
+    </div>
+  </div>
+
+  <!-- PAST LOGS -->
+  <div class="section">
+    <div class="section-title">최근 일지 기록</div>
+    <div id="pastLogs" style="font-size:13px;color:var(--muted);line-height:2;"></div>
+  </div>
+
+  <div class="footer">SOKUHYUN × FIEPESIA — BUILD IN PUBLIC</div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'artist_cmd_v2';
+
+  function getTodayKey() {
+    return new Date().toISOString().slice(0,10);
+  }
+
+  function loadData() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    catch { return {}; }
+  }
+
+  function saveData(d) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+  }
+
+  function getTodayData() {
+    const d = loadData();
+    const k = getTodayKey();
+    if (!d[k]) d[k] = { tasks: {}, wake: null, sunoToday: 0, post: false, note: '', score: 0 };
+    return { data: d, today: d[k], key: k };
+  }
+
+  function saveTodayData(today) {
+    const d = loadData();
+    d[getTodayKey()] = today;
+    saveData(d);
+  }
+
+  // Wake check-in
+  function checkIn(type) {
+    const { today } = getTodayData();
+    const now = new Date();
+    const hour = now.getHours();
+    const min = now.getMinutes();
+
+    if (type === 'wake') {
+      const timeStr = `${String(hour).padStart(2,'0')}:${String(min).padStart(2,'0')}`;
+      today.wake = timeStr;
+      today.wakeHour = hour + min/60;
+      saveTodayData(today);
+      render();
+    }
+    if (type === 'suno') {
+      addSuno();
+    }
+    if (type === 'post') {
+      today.post = !today.post;
+      saveTodayData(today);
+      render();
+    }
+  }
+
+  function addSuno() {
+    const { data, today, key } = getTodayData();
+    today.sunoToday = (today.sunoToday || 0) + 1;
+    data[key] = today;
+    saveData(data);
+    render();
+  }
+
+  function toggleTask(n) {
+    if (n === 5) return; // task 5 is controlled by save
+    const { today } = getTodayData();
+    today.tasks = today.tasks || {};
+    today.tasks[n] = !today.tasks[n];
+    saveTodayData(today);
+    render();
+  }
+
+  function saveLog() {
+    const note = document.getElementById('dailyNote').value.trim();
+    const lines = note.split('\n').filter(l => l.trim().length > 0);
+    if (lines.length < 2) {
+      document.getElementById('saveBlocked').classList.add('show');
+      return;
+    }
+    document.getElementById('saveBlocked').classList.remove('show');
+    const { today } = getTodayData();
+    today.note = note;
+    today.tasks[5] = true;
+    saveTodayData(today);
+    render();
+  }
+
+  function calcScore(today) {
+    let score = 0;
+    const t = today.tasks || {};
+    if (today.wake) score += 10;        // got up + logged it — clock time doesn't matter
+    if (t[1]) score += 15;              // sunlight after waking
+    if (today.sunoToday >= 1) score += 30;
+    if (today.post) score += 20;
+    if (t[4]) score += 10;              // consistent bedtime
+    if (t[5]) score += 15;              // log written
+    return Math.min(score, 100);
+  }
+
+  function calcStreak() {
+    const data = loadData();
+    const today = getTodayKey();
+    let streak = 0;
+    let d = new Date();
+    while (true) {
+      const k = d.toISOString().slice(0,10);
+      if (k === today) {
+        d.setDate(d.getDate() - 1);
+        continue;
+      }
+      const entry = data[k];
+      if (!entry || calcScore(entry) < 40) break;
+      streak++;
+      d.setDate(d.getDate() - 1);
+      if (streak > 365) break;
+    }
+    return streak;
+  }
+
+  function renderWeekGrid() {
+    const data = loadData();
+    const grid = document.getElementById('weekGrid');
+    grid.innerHTML = '';
+    const days = ['일','월','화','수','목','금','토'];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const k = d.toISOString().slice(0,10);
+      const isToday = i === 0;
+      const isFuture = false;
+      const entry = data[k];
+      const score = entry ? calcScore(entry) : -1;
+      let cls = 'week-day';
+      if (isToday) cls += ' today';
+      if (score >= 70) cls += ' done';
+      else if (score >= 30) cls += ' partial';
+      else if (score >= 0) cls += ' missed';
+      else cls += ' future';
+      grid.innerHTML += `<div class="${cls}"><div class="wday">${days[d.getDay()]}</div><div>${score >= 0 ? score : '—'}</div></div>`;
+    }
+  }
+
+  function renderPastLogs() {
+    const data = loadData();
+    const keys = Object.keys(data).sort().reverse().slice(0, 5);
+    const el = document.getElementById('pastLogs');
+    if (keys.length === 0) { el.innerHTML = '<span>아직 기록이 없어요.</span>'; return; }
+    el.innerHTML = keys.map(k => {
+      const e = data[k];
+      const score = calcScore(e);
+      const note = e.note ? e.note.split('\n')[0] : '—';
+      const color = score >= 70 ? 'var(--ok)' : score >= 40 ? 'var(--accent)' : 'var(--warn)';
+      return `<div style="padding:6px 0;border-bottom:1px solid var(--border);"><span style="color:${color};font-weight:700;">${k} [${score}점]</span> <span style="color:var(--muted);">${note.slice(0,40)}</span></div>`;
+    }).join('');
+  }
+
+  function render() {
+    const { today } = getTodayData();
+    const now = new Date();
+    const todayKey = getTodayKey();
+
+    // Date display
+    const days = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+    document.getElementById('dateDisplay').textContent =
+      `${todayKey} ${days[now.getDay()]}`;
+
+    // Greeting
+    const h = now.getHours();
+    const didSuno = (today.sunoToday || 0) >= 1;
+    document.getElementById('greeting').textContent = didSuno ? '곡은 만들었다. 이제 세상에 내보내.' : '오늘, 한 곡부터.';
+
+    // Streak
+    const streak = calcStreak();
+    const sb = document.getElementById('streakBadge');
+    sb.textContent = `STREAK: ${streak}일`;
+    sb.className = `day-count ${streak >= 3 ? 'good' : 'warn'}`;
+
+    // Status cards
+    const wakeCard = document.getElementById('card-wake');
+    const wakeVal = document.getElementById('wake-val');
+    if (today.wake) {
+      wakeCard.className = 'status-card done';
+      wakeVal.textContent = today.wake;
+    } else {
+      wakeCard.className = 'status-card';
+      wakeVal.textContent = '?';
+    }
+
+    const sunoVal = document.getElementById('suno-val');
+    const sunoCard = document.getElementById('card-suno');
+    sunoVal.textContent = today.sunoToday || 0;
+    sunoCard.className = `status-card ${today.sunoToday >= 1 ? 'done' : ''}`;
+
+    const postVal = document.getElementById('post-val');
+    const postCard = document.getElementById('card-post');
+    postVal.textContent = today.post ? 'UP' : '—';
+    postCard.className = `status-card ${today.post ? 'done' : ''}`;
+
+    // Score
+    const score = calcScore(today);
+    document.getElementById('todayScore').innerHTML =
+      `${score}<span style="font-size:24px;color:var(--muted)">/100</span>`;
+    const labels = {
+      0: '아직 아무것도 안 했어요',
+      25: '시작했어요. 계속해요.',
+      50: '절반. 마저 해요.',
+      75: '거의 다 했어요.',
+      100: '오늘 완주. 내일도.'
+    };
+    const scoreLabel = score >= 100 ? labels[100] : score >= 75 ? labels[75] : score >= 50 ? labels[50] : score >= 25 ? labels[25] : labels[0];
+    document.getElementById('scoreLabel').textContent = scoreLabel;
+
+    // Tasks
+    const t = today.tasks || {};
+    // Auto-set Suno task from track count
+    if (today.sunoToday >= 1) t[2] = true;
+
+    for (let i = 1; i <= 5; i++) {
+      const taskEl = document.getElementById(`task-${i}`);
+      const checkEl = document.getElementById(`check-${i}`);
+      if (t[i]) {
+        taskEl.classList.add('done');
+        checkEl.innerHTML = '✓';
+      } else {
+        taskEl.classList.remove('done');
+        checkEl.innerHTML = '';
+      }
+    }
+
+    // Suno counters
+    document.getElementById('sunoCount').textContent = today.sunoToday || 0;
+    const all = loadData();
+    const totalSuno = Object.values(all).reduce((s,e) => s + (e.sunoToday||0), 0);
+    document.getElementById('totalSuno').textContent = totalSuno;
+
+    // Note
+    const noteEl = document.getElementById('dailyNote');
+    if (today.note && noteEl.value === '') noteEl.value = today.note;
+
+    // Alert
+    const alertBox = document.getElementById('alertBox');
+    if ((today.sunoToday || 0) === 0 && score < 20) {
+      alertBox.className = 'alert-box show fire';
+      alertBox.textContent = '아직 곡이 0개야. 완성하지 않아도 돼 — Suno 열고 한 줄만 써. 슬프면 그 슬픔을 가사로 넣어. 슬픔이 재료다.';
+    } else if (score >= 100) {
+      alertBox.className = 'alert-box show chill';
+      alertBox.textContent = '오늘 완주. 스트릭 유지됐어. 내일 07:30 이전에 이 페이지를 다시 열어.';
+    } else {
+      alertBox.className = 'alert-box';
+    }
+
+    renderWeekGrid();
+    renderPastLogs();
+  }
+
+  // Init
+  render();
+  setInterval(render, 60000);
+</script>
+</body>
+</html>
